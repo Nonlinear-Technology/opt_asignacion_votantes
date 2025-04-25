@@ -30,50 +30,136 @@ with col1:
     if st.button(f':material/public: :orange[**Ver circuitos**]', type='tertiary'):
         circuitos_electorales()
 
-circuitos = ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '115', '120', '130', '140', '142', '150', '152', '160', '161', '162', '165', '171', '172', '180', '185']
+circuitos = ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '115', '120', '130', '140', '142', '150', '152', '160', '161', '162', '165', '170', '171', '172', '175', '180', '185']
 # colSegmentacion, _ = st.columns([1,5])
-colData, colMapa = st.columns([1,4]) 
-with colData:
+colSeleccion, _, colMapaSeleccion = st.columns([1,3,2])
+with colSeleccion:
     circuitos_seleccionados = st.selectbox(label = f'**Seleccionar circuitos**', options = circuitos)
     circuitos_seleccionados = [circuitos_seleccionados]
+with colMapaSeleccion:
+    actual_nueva = st.pills(label = f'**Seleccionar mapa**', options = ['Actual', 'Optimo'])
 
 try:
     if len(circuitos_seleccionados) == len(circuitos):
         # postprocessing()
-        distancia_total_nueva, distancia_total_actual, cantidad_votantes = metricas()
+        distancia_total_nueva, distancia_total_actual, cantidad_votantes, distancia_maxima_nueva, distancia_maxima_actual = metricas()
     else:
         # postprocessing(circuitos = list(circuitos_seleccionados), mapa_completo=False)
-        distancia_total_nueva, distancia_total_actual, cantidad_votantes = metricas(circuitos = list(circuitos_seleccionados), mapa_completo=False)
+        distancia_total_nueva, distancia_total_actual, cantidad_votantes, distancia_maxima_nueva, distancia_maxima_actual  = metricas(circuitos = list(circuitos_seleccionados), mapa_completo=False)
 except Exception as e:
     st.error(f'Error: {e}')
     
- 
-
-with colData:
-    circuito = circuitos_seleccionados[0]
-    actual_nueva = st.pills(label = f'**Seleccionar asignación**', options = ['Actual', 'Propuesta'])
+colActual, colNueva, colMapa = st.columns([2,2,2]) 
+circuito = circuitos_seleccionados[0]        
+        
+with colActual:
+#     colMetrica1Actual, colMetrica2Actual = st.columns([1,1])
+#     with colMetrica1Actual:
+    st.markdown(
+        """
+        <div style="
+            font-size: 20px;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;">
+            ACTUAL
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    st.write('')
     
-    if actual_nueva == 'Actual':
+    colMetricasActual, colHistorgramaActual = st.columns([1,1])
+    
+    with colMetricasActual:
         custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_actual:.2f} km')
+        # with colMetrica2Actual:
         st.write('')
         custom_metric(label = f'Distancia promedio por persona', valor_total = f'{distancia_total_actual/cantidad_votantes:.2f} km')
-            
-        with colMapa:
-           with open(f'Postprocessing/mapa_actual_{circuito}.pkl', 'rb') as f:
-                map_actual = pickle.load(f)
-                with st.spinner('Generando mapa...'):
-                    folium_static(map_actual)
-                
-    if actual_nueva == 'Propuesta':
+        st.write('')
+        custom_metric(label = f'Distancia máxima recorrida', valor_total = f'{distancia_maxima_actual:.2f} km')
+    
+    with colHistorgramaActual:
+        with open(f'Postprocessing/histogram_actual_{circuito}.pkl', 'rb') as f:
+            histograma_actual = pickle.load(f)
+            with st.spinner('Generando histograma...'):
+                st.plotly_chart(histograma_actual)
+with colNueva:
+    # colMetrica1Nueva, colMetrica2Nueva = st.columns([1,1])
+    # with colMetrica1Nueva:
+    st.markdown(
+        """
+        <div style="
+            font-size: 20px;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;">
+            OPTIMO
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    st.write('')
+    
+    colMetricasPropuesta, colHistorgramaPropuesta = st.columns([1,1])
+    
+    with colMetricasPropuesta:
         custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_nueva:.2f} km')
+        # with colMetrica2Nueva:
         st.write('')
         custom_metric(label = f'Distancia promedio por persona', valor_total = f'{distancia_total_nueva/cantidad_votantes:.2f} km')
+        st.write('')
+        custom_metric(label = f'Distancia máxima recorrida', valor_total = f'{distancia_maxima_nueva:.2f} km')
+    
+    with colHistorgramaPropuesta:
+        with open(f'Postprocessing/histogram_nueva_{circuito}.pkl', 'rb') as f:
+            histograma_nueva = pickle.load(f)
+            with st.spinner('Generando histograma...'):
+                st.plotly_chart(histograma_nueva)
+
+with colMapa:
+    
+    if actual_nueva == 'Actual':
+        with open(f'Postprocessing/mapa_actual_{circuito}.pkl', 'rb') as f:
+            map_actual = pickle.load(f)
+            with st.spinner('Generando mapa...'):
+                folium_static(map_actual)
+    if actual_nueva == 'Optimo':
+        with open(f'Postprocessing/mapa_nuevo_{circuito}.pkl', 'rb') as f:
+            map_nueva = pickle.load(f)
+            with st.spinner('Generando mapa...'):
+                folium_static(map_nueva)
         
-        with colMapa:
-            with open(f'Postprocessing/mapa_nuevo_{circuito}.pkl', 'rb') as f:
-                map_nueva = pickle.load(f)
-                with st.spinner('Generando mapa...'):
-                    folium_static(map_nueva)
+
+# with colData:
+#     circuito = circuitos_seleccionados[0]
+#     actual_nueva = st.pills(label = f'**Seleccionar asignación**', options = ['Actual', 'Propuesta'])
+    
+#     if actual_nueva == 'Actual':
+#         custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_actual:.2f} km')
+#         st.write('')
+#         custom_metric(label = f'Distancia promedio por persona', valor_total = f'{distancia_total_actual/cantidad_votantes:.2f} km')
+            
+#         with colMapa:
+#            with open(f'Postprocessing/mapa_actual_{circuito}.pkl', 'rb') as f:
+#                 map_actual = pickle.load(f)
+#                 with st.spinner('Generando mapa...'):
+#                     folium_static(map_actual)
+                
+#     if actual_nueva == 'Propuesta':
+#         custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_nueva:.2f} km')
+#         st.write('')
+#         custom_metric(label = f'Distancia promedio por persona', valor_total = f'{distancia_total_nueva/cantidad_votantes:.2f} km')
+        
+#         with colMapa:
+#             with open(f'Postprocessing/mapa_nuevo_{circuito}.pkl', 'rb') as f:
+#                 map_nueva = pickle.load(f)
+#                 with st.spinner('Generando mapa...'):
+#                     folium_static(map_nueva)
     
 
 
