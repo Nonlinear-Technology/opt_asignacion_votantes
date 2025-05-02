@@ -1,43 +1,5 @@
 import streamlit as st
 
-st.logo('Logo-normal.svg', icon_image='Logo-iso chico.svg')
-
-
-# Configuración de la página
-st.set_page_config(page_title="Descripción del problema", page_icon=":material/ballot:", layout="wide", initial_sidebar_state="expanded")
-
-# Estilos visuales
-st.markdown("""
-    <style>
-    html, body, [class*="css"] {
-        font-size: 18px;
-        font-family: 'Segoe UI', sans-serif;
-        line-height: 1.6;
-    }
-    h1 {
-        color: #a13e5d;
-    }
-    h2 {
-        color: #c75d71;
-        margin-top: 2em;
-    }
-    .highlight {
-        background-color: #fff5f8;
-        padding: 0.8em;
-        border-left: 6px solid #a13e5d;
-        border-radius: 8px;
-        margin-bottom: 1.5em;
-    }
-    ul, ol {
-        margin-left: 1.5em;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# Título principal con emoji de urna de votación
-st.markdown("<h1>🗳️ Descripción del problema</h1>", unsafe_allow_html=True)
-import streamlit as st
-
 # Configuración de la página
 st.set_page_config(page_title="Descripción del problema", layout="wide")
 

@@ -1,10 +1,10 @@
 import streamlit as st
+# Configurar la página
+st.set_page_config(page_title="Metodología", layout="wide")
 
 # st.logo('Logo-normal.svg', icon_image='Logo-iso chico.svg')
 st.logo('Logo-normal.svg', icon_image='Logo-iso chico.svg')
 
-# Configurar la página
-st.set_page_config(page_title="Metodología", layout="wide")
 
 # Estilos personalizados: tamaño de letra, colores, separación
 st.markdown("""
