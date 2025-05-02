@@ -1,7 +1,9 @@
 import streamlit as st
 
 # Configuración de la página
-st.set_page_config(page_title="Descripción del problema", layout="wide")
+st.set_page_config(page_title="Descripción del problema", page_icon=":material/ballot:", layout="wide", initial_sidebar_state="expanded")
+
+st.logo('Logo-normal.svg', icon_image='Logo-iso chico.svg')
 
 # Estilos visuales
 st.markdown("""
@@ -44,9 +46,9 @@ Un método comúnmente utilizado consiste en <strong>ordenar alfabéticamente el
 
 <h2>Enfoque propuesto</h2>
 
-A partir de <strong>datos oficiales</strong>, desde <strong>Nonlinear</strong> proponemos un enfoque basado en <strong>rigurosidad matemática</strong> y <strong>herramientas informáticas</strong> para obtener una asignación óptima, 'Mesas fijas' de votantes al colegio más cercano, respetando las zonas electorales y las capacidades de las mesas.
+A partir de <strong>datos oficiales</strong>, desde <strong>Nonlinear</strong> proponemos un enfoque basado en <strong>ciencia de datos</strong> y <strong>optimización matemática</strong> para obtener una asignación óptima, 'Mesas fijas' de votantes al colegio más cercano, respetando las zonas electorales y las capacidades de las mesas.
 
-Además, desarrollamos un modelo aún más eficiente, 'Mesas libres' que permite <strong>adaptar la cantidad de mesas</strong> según la cercanía de las escuelas a la mayor concentración de votantes.
+Además, desarrollamos un modelo aún más eficiente, 'Mesas libres', que permite <strong>adaptar la cantidad de mesas</strong> de los locales, según la geolocalización de las mismas.
 
 <h2>Contenido del sitio</h2>
 
