@@ -30,26 +30,26 @@ with col1:
     if st.button(f':material/public: :orange[**Ver circuitos**]', type='tertiary'):
         circuitos_electorales()
 
-circuitos = ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '115', '120', '130', '140', '142', '150', '152', '160', '161', '162', '165', '170', '171', '172', '175', '180', '185']
+st.session_state.circuitos = ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '115', '120', '130', '140', '142', '150', '152', '160', '161', '162', '165', '170', '171', '172', '175', '180', '185']
 # colSegmentacion, _ = st.columns([1,5])
 colSeleccion, _, colMapaSeleccion = st.columns([1,3,2])
 with colSeleccion:
-    circuitos_seleccionados = st.selectbox(label = f'**Seleccionar circuitos**', options = circuitos)
+    circuitos_seleccionados = st.selectbox(label = f'**Seleccionar circuitos**', options = st.session_state.circuitos)
     circuitos_seleccionados = [circuitos_seleccionados]
-with colMapaSeleccion:
-    actual_nueva = st.pills(label = f'**Seleccionar mapa**', options = ['Actual', 'Optimo'])
+# with colMapaSeleccion:
+#     actual_nueva = st.pills(label = f'**Seleccionar mapa**', options = ['Actual', 'Optimo mesas fijas', 'Optimo mesas libres'])
 
 try:
-    if len(circuitos_seleccionados) == len(circuitos):
+    if len(circuitos_seleccionados) == len(st.session_state.circuitos):
         # postprocessing()
-        distancia_total_nueva, distancia_total_actual, cantidad_votantes, distancia_maxima_nueva, distancia_maxima_actual = metricas()
+        distancia_total_nueva, distancia_total_actual, distancia_total_nueva_2, cantidad_votantes, distancia_maxima_nueva, distancia_maxima_actual, distancia_maxima_nueva_2  = metricas()
     else:
         # postprocessing(circuitos = list(circuitos_seleccionados), mapa_completo=False)
-        distancia_total_nueva, distancia_total_actual, cantidad_votantes, distancia_maxima_nueva, distancia_maxima_actual  = metricas(circuitos = list(circuitos_seleccionados), mapa_completo=False)
+        distancia_total_nueva, distancia_total_actual, distancia_total_nueva_2, cantidad_votantes, distancia_maxima_nueva, distancia_maxima_actual, distancia_maxima_nueva_2  = metricas(circuitos = list(circuitos_seleccionados), mapa_completo=False)
 except Exception as e:
     st.error(f'Error: {e}')
     
-colActual, colNueva, colMapa = st.columns([2,2,2]) 
+colActual, colNueva, colNueva2 = st.columns([2,2,2]) 
 circuito = circuitos_seleccionados[0]        
         
 with colActual:
@@ -98,7 +98,7 @@ with colNueva:
             border-radius: 10px;
             padding: 10px;
             text-align: center;">
-            OPTIMO
+            OPTIMO Mesas Fijas
         </div>
         """,
         unsafe_allow_html=True
@@ -121,18 +121,84 @@ with colNueva:
             with st.spinner('Generando histograma...'):
                 st.plotly_chart(histograma_nueva)
 
-with colMapa:
+with colNueva2:
+    st.markdown(
+        """
+        <div style="
+            font-size: 20px;
+            font-weight: bold;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;">
+            OPTIMO Mesas Libres
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    st.write('')
     
-    if actual_nueva == 'Actual':
+    colMetricasPropuesta, colHistorgramaPropuesta = st.columns([1,1])
+    
+    with colMetricasPropuesta:
+        custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_nueva_2:.2f} km')
+        # with colMetrica2Nueva:
+        st.write('')
+        custom_metric(label = f'Distancia promedio por persona', valor_total = f'{distancia_total_nueva_2/cantidad_votantes:.2f} km')
+        st.write('')
+        custom_metric(label = f'Distancia máxima recorrida', valor_total = f'{distancia_maxima_nueva_2:.2f} km')
+    
+    with colHistorgramaPropuesta:
+        with open(f'Postprocessing/histogram_nueva_2_{circuito}.pkl', 'rb') as f:
+            histograma_nueva = pickle.load(f)
+            with st.spinner('Generando histograma...'):
+                st.plotly_chart(histograma_nueva)
+                
+colMapa1, colMapa2 = st.columns([1,1])
+
+with colMapa1:
+
+    actual_nueva_1 = st.pills(label = f'**Seleccionar mapa**', options = ['Actual', 'Optimo mesas fijas', 'Optimo mesas libres'], key='pills_1')
+    
+    if actual_nueva_1 == 'Actual':
         with open(f'Postprocessing/mapa_actual_{circuito}.pkl', 'rb') as f:
             map_actual = pickle.load(f)
             with st.spinner('Generando mapa...'):
                 folium_static(map_actual)
-    if actual_nueva == 'Optimo':
+
+    if actual_nueva_1 == 'Optimo mesas fijas':
         with open(f'Postprocessing/mapa_nuevo_{circuito}.pkl', 'rb') as f:
             map_nueva = pickle.load(f)
             with st.spinner('Generando mapa...'):
                 folium_static(map_nueva)
+
+    if actual_nueva_1 == 'Optimo mesas libres':
+        with open(f'Postprocessing/mapa_nuevo_2_{circuito}.pkl', 'rb') as f:
+            map_nueva_2 = pickle.load(f)
+            with st.spinner('Generando mapa...'):
+                folium_static(map_nueva_2)
+                
+with colMapa2:
+    
+    actual_nueva_2 = st.pills(label = f'**Seleccionar mapa**', options = ['Actual', 'Optimo mesas fijas', 'Optimo mesas libres'], key='pills_2')
+    
+    if actual_nueva_2 == 'Actual':
+        with open(f'Postprocessing/mapa_actual_{circuito}.pkl', 'rb') as f:
+            map_actual = pickle.load(f)
+            with st.spinner('Generando mapa...'):
+                folium_static(map_actual)
+
+    if actual_nueva_2 == 'Optimo mesas fijas':
+        with open(f'Postprocessing/mapa_nuevo_{circuito}.pkl', 'rb') as f:
+            map_nueva = pickle.load(f)
+            with st.spinner('Generando mapa...'):
+                folium_static(map_nueva)
+
+    if actual_nueva_2 == 'Optimo mesas libres':
+        with open(f'Postprocessing/mapa_nuevo_2_{circuito}.pkl', 'rb') as f:
+            map_nueva_2 = pickle.load(f)
+            with st.spinner('Generando mapa...'):
+                folium_static(map_nueva_2)
         
 
 # with colData:

@@ -89,48 +89,84 @@ def create_map(df, title):
         # Ensure the required columns exist
         if 'VOTANTE' not in df.columns or 'Latitude_votante' not in df.columns or 'Longitude_votante' not in df.columns:
             raise KeyError("Required columns ('VOTANTE', 'Latitude_votante', 'Longitude_votante') are missing in the DataFrame.")
-        
+        # Define colors for the schools
+        colors = ['blue', 'green', 'purple', 'orange', 'darkred', 'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen', 'gray', 'black', 'lightgray']
+        max_radius, min_radius = 10, 1
+
         # Create a map centered around the average latitude and longitude
         map_center = [df['Latitude_escuela'].mean(), df['Longitude_escuela'].mean()]
         m = folium.Map(location=map_center, zoom_start=12)
-        
-        # Define colors for the schools
-        colors = ['blue', 'green', 'purple', 'orange', 'darkred', 'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen', 'gray', 'black', 'lightgray']
-        
+
         # Add schools to the map with different colors
         school_colors = {}
         for i, (_, row) in enumerate(df.drop_duplicates(subset=['ESCUELA']).iterrows()):
             color = colors[i % len(colors)]
             school_colors[row['ESCUELA']] = color
-            folium.Marker(
-                location=[row['Latitude_escuela'], row['Longitude_escuela']],
-                popup=row['ESCUELA'],
-                icon=folium.Icon(color=color, icon='info-sign')
-            ).add_to(m)
+            # si row['Latitude_escuela'] no es un float o es NaN que se imprima el nombre de la escuela y el valor
+            try:
+                folium.Marker(
+                    location=[row['Latitude_escuela'], row['Longitude_escuela']],
+                    popup=row['ESCUELA'],
+                    icon=folium.Icon(color=color, icon='info-sign')
+                ).add_to(m)
+            except ValueError:
+                print(f"Error with school {row['ESCUELA']}: Latitude_escuela={row['Latitude_escuela']}, Longitude_escuela={row['Longitude_escuela']}")
+
+        
+        
+        # Number of voters per school for each block
+        print(df.columns)
+        for (lat, long), subdf in df.groupby(["Latitude_votante", "Longitude_votante"]):
+            school_count = {school: 0 for school in subdf['ESCUELA'].unique()}
+            for _, row in subdf.iterrows():
+                # Calculate the radius based on the number of voters
+                school_count[row['ESCUELA']] += 1
+
+            # For each school in the block
+            for school in school_count:
+                
+                if school_count[school] > 0:
+                                # # Apply a small random offset to overlapping points
+                    jitter_lat = random.uniform(-0.00005, 0.00005)  # Small random offset for latitude
+                    jitter_lon = random.uniform(-0.00005, 0.00005)  # Small random offset for longitude
+                    adjusted_lat = lat + jitter_lat
+                    adjusted_lon = long + jitter_lon
+                    # normalize radius
+                    proportion = school_count[school] / len(subdf)
+                    radius = max_radius * (proportion) + min_radius
+                folium.CircleMarker(    
+                    location=[adjusted_lat, adjusted_lon],
+                    radius=radius,
+                    color=school_colors[school],
+                    fill=True,
+                    fill_color=school_colors[school],
+                    fill_opacity=0.9*proportion,
+                    popup=f"Proporción asignada a {school}: {proportion*100} %"
+                ).add_to(m)
         
         # Add voters to the map
-        for _, row in df.iterrows():
-            school_color = school_colors.get(row['ESCUELA'], 'gray')  # Default to gray if school not found
+
+            # school_color = school_colors.get(row['ESCUELA'], 'gray')  # Default to gray if school not found
             
-            # Apply a small random offset to overlapping points
-            jitter_lat = random.uniform(-0.0001, 0.0001)  # Small random offset for latitude
-            jitter_lon = random.uniform(-0.0001, 0.0001)  # Small random offset for longitude
-            adjusted_lat = row['Latitude_votante'] + jitter_lat
-            adjusted_lon = row['Longitude_votante'] + jitter_lon
+            # # Apply a small random offset to overlapping points
+            # jitter_lat = random.uniform(-0.0001, 0.0001)  # Small random offset for latitude
+            # jitter_lon = random.uniform(-0.0001, 0.0001)  # Small random offset for longitude
+            # adjusted_lat = row['Latitude_votante'] + jitter_lat
+            # adjusted_lon = row['Longitude_votante'] + jitter_lon
             
-            folium.CircleMarker(
-                location=[adjusted_lat, adjusted_lon],
-                radius=5,  # Adjust the size of the point
-                color=school_color,
-                fill=True,
-                fill_color=school_color,
-                fill_opacity=0.6,
-                popup=f"VOTANTE: {row['VOTANTE']}<br>ESCUELA: {row['ESCUELA']}"
-            ).add_to(m)
+            # folium.CircleMarker(
+            #     location=[adjusted_lat, adjusted_lon],
+            #     radius=5,  # Adjust the size of the point
+            #     color=school_colors[school],
+            #     fill=True,
+            #     fill_color=school_colors[school],
+            #     fill_opacity=0.6,
+            #     popup=f"VOTANTE: {row['VOTANTE']}<br>ESCUELA: {row['ESCUELA']}"
+            # ).add_to(m)
         
         return m
 
-def postprocessing(circuitos=None, mapa_completo=True):
+def postprocessing(circuitos=None, mapa_completo=True, mesas_libres = False):
     """
     Process electoral data for specified circuitos or all data if mapa_completo is True.
     
@@ -140,12 +176,18 @@ def postprocessing(circuitos=None, mapa_completo=True):
     """
     if mapa_completo:
         # Process all files
-        df_asignacion_nueva = read_and_concatenate_result_models('Postprocessing/result_model*.pkl')
+        if mesas_libres:
+            df_asignacion_nueva = read_and_concatenate_result_models('Postprocessing/result_model_2_*.pkl')
+        else:
+            df_asignacion_nueva = read_and_concatenate_result_models('Postprocessing/result_model*.pkl')
         df_asignacion_actual = read_and_concatenate_result_models('Postprocessing/result_actual_model*.pkl')
         df_escuelas = read_and_concatenate_files('Preprocessing/escuelas_geolocalizadas*.xlsx')
     else:
         # Process only files for the specified circuitos
-        result_model_files_nueva = [f'Postprocessing/result_model_{circuito}.pkl' for circuito in circuitos]
+        if mesas_libres:
+            result_model_files_nueva = [f'Postprocessing/result_model_2_{circuito}.pkl' for circuito in circuitos]
+        else:
+            result_model_files_nueva = [f'Postprocessing/result_model_{circuito}.pkl' for circuito in circuitos]
         result_model_files_actual = [f'Postprocessing/result_actual_model_{circuito}.pkl' for circuito in circuitos]
         escuelas_files = [f'Preprocessing/escuelas_geolocalizadas_{circuito}.xlsx' for circuito in circuitos]
         
@@ -201,8 +243,12 @@ def postprocessing(circuitos=None, mapa_completo=True):
         circuito = circuitos[0]
     
         # Save the maps
-        with open(f'Postprocessing/mapa_nuevo_{circuito}.pkl', 'wb') as f:
-            pickle.dump(map_nueva, f)
+        if mesas_libres:
+            with open(f'Postprocessing/mapa_nuevo_2_{circuito}.pkl', 'wb') as f:
+                pickle.dump(map_nueva, f)
+        else:
+            with open(f'Postprocessing/mapa_nuevo_{circuito}.pkl', 'wb') as f:
+                pickle.dump(map_nueva, f)
             
         with open(f'Postprocessing/mapa_actual_{circuito}.pkl', 'wb') as f:
             pickle.dump(map_actual, f)
@@ -291,62 +337,72 @@ def metricas(circuitos=None, mapa_completo=True):
         mapa_completo (bool): Whether to process all data. Defaults to True.
 
     Returns:
-        tuple: (distancia_total_nueva, distancia_total_actual, cantidad_votantes, max_distance_nueva, max_distance_actual)
+        tuple: (distancia_total_nueva, distancia_total_actual, distancia_total_nueva_2, cantidad_votantes,
+                max_distance_nueva, max_distance_actual, max_distance_nueva_2)
             - distancia_total_nueva: Total distance for the new model.
             - distancia_total_actual: Total distance for the actual model.
+            - distancia_total_nueva_2: Total distance for the nueva_2 model.
             - cantidad_votantes: Total number of voters.
             - max_distance_nueva: Maximum distance assigned to a voter in the new model.
             - max_distance_actual: Maximum distance assigned to a voter in the actual model.
+            - max_distance_nueva_2: Maximum distance assigned to a voter in the nueva_2 model.
     """
     if mapa_completo:
         # Process all files
         distancia_total_nueva, cantidad_votantes_nueva = read_and_sum_objective_values('Postprocessing/result_model*.pkl')
         distancia_total_actual, cantidad_votantes_actual = read_and_sum_objective_values('Postprocessing/result_actual_model*.pkl')
+        distancia_total_nueva_2, cantidad_votantes_nueva_2 = read_and_sum_objective_values('Postprocessing/result_model_2*.pkl')
+        
         max_distance_nueva, max_distance_actual = get_max_distance_by_voter(
             [file.split('_')[-1].split('.')[0] for file in glob.glob('Preprocessing/data_modelo_*.pkl')]
+        )
+        max_distance_nueva_2, _ = get_max_distance_by_voter(
+            [file.split('_')[-1].split('.')[0] for file in glob.glob('Preprocessing/data_modelo_2_*.pkl')]
         )
     else:
         # Process only files for the specified circuitos
         result_model_files_nueva = [f'Postprocessing/result_model_{circuito}.pkl' for circuito in circuitos]
         result_model_files_actual = [f'Postprocessing/result_actual_model_{circuito}.pkl' for circuito in circuitos]
+        result_model_files_nueva_2 = [f'Postprocessing/result_model_2_{circuito}.pkl' for circuito in circuitos]
         
         distancia_total_nueva, cantidad_votantes_nueva = read_and_sum_objective_values(result_model_files_nueva)
         distancia_total_actual, cantidad_votantes_actual = read_and_sum_objective_values(result_model_files_actual)
+        distancia_total_nueva_2, cantidad_votantes_nueva_2 = read_and_sum_objective_values(result_model_files_nueva_2)
+        
         max_distance_nueva, max_distance_actual = get_max_distance_by_voter(circuitos)
+        max_distance_nueva_2, _ = get_max_distance_by_voter(circuitos)
 
-    if cantidad_votantes_nueva == cantidad_votantes_actual:
+    # Ensure the number of voters is consistent across models
+    if cantidad_votantes_nueva == cantidad_votantes_actual == cantidad_votantes_nueva_2:
         cantidad_votantes = cantidad_votantes_nueva
-        print('La cantidad de votantes asignados en el modelo actual y el nuevo es la misma')
+        print('La cantidad de votantes asignados en los tres modelos es la misma')
     else:
-        print('La cantidad de votantes asignados en el modelo actual y el nuevo es diferente')
+        print('La cantidad de votantes asignados en los modelos es diferente')
         print(f'Cantidad de votantes asignados en el modelo actual: {cantidad_votantes_actual}')
         print(f'Cantidad de votantes asignados en el modelo nuevo: {cantidad_votantes_nueva}')
+        print(f'Cantidad de votantes asignados en el modelo nueva_2: {cantidad_votantes_nueva_2}')
         
-    return distancia_total_nueva, distancia_total_actual, cantidad_votantes, max_distance_nueva, max_distance_actual
+    return distancia_total_nueva, distancia_total_actual, distancia_total_nueva_2, cantidad_votantes, max_distance_nueva, max_distance_actual, max_distance_nueva_2
 
-def calculate_global_and_average_saving():
+def calculate_global_and_average_saving(circuitos, modelo_elegido):
     """
     Calculates the global saving (ahorro), the average distance saving,
     the average distances for the nueva and actual models, and the time metrics.
+
+    Args:
+        circuitos (list of str): List of circuito numbers (e.g., ['11A', '12B']).
 
     Returns:
         tuple: (global_actual, global_nuevo, global_saving, average_distance_saving, 
                 average_distance_actual, average_distance_nueva, 
                 global_time_saved, average_time_saved, average_time_actual, average_time_nueva)
-            - global_actual: Total distance for the actual model.
-            - global_nuevo: Total distance for the nueva model.
-            - global_saving: Total saving across all circuitos.
-            - average_distance_saving: Global saving divided by the total number of voters.
-            - average_distance_actual: Average distance per voter for the actual model.
-            - average_distance_nueva: Average distance per voter for the nueva model.
-            - global_time_saved: Total time saved across all circuitos.
-            - average_time_saved: Average time saved per voter.
-            - average_time_actual: Average time per voter for the actual model.
-            - average_time_nueva: Average time per voter for the nueva model.
     """
-    # Get all result_model and result_model_actual files
-    result_model_files = glob.glob('Postprocessing/result_model_*.pkl')
-    result_model_actual_files = glob.glob('Postprocessing/result_actual_model_*.pkl')
+    # Construct file paths based on the provided circuitos
+    if modelo_elegido == 'Propuesta 1':
+        result_model_files = [f'Postprocessing/result_model_{circuito}.pkl' for circuito in circuitos]
+    if modelo_elegido == 'Propuesta 2':
+        result_model_files = [f'Postprocessing/result_model_2_{circuito}.pkl' for circuito in circuitos]
+    result_model_actual_files = [f'Postprocessing/result_actual_model_{circuito}.pkl' for circuito in circuitos]
 
     # Ensure the number of files match
     if len(result_model_files) != len(result_model_actual_files):
@@ -406,11 +462,16 @@ def calculate_global_and_average_saving():
             average_distance_actual, average_distance_nueva, 
             global_time_saved, average_time_saved, average_time_actual, average_time_nueva)
 # %%
-def create_heatmap_with_savings():
+def create_heatmap_with_savings(modelo_elegido):
     """
     Creates a heat map of Santa Fe circuitos based on the difference in objective function values
     (actual - nuevo) using the circ_santafe23.geojson file and result_model pickles.
     """
+    if modelo_elegido == 'Propuesta 1':
+        mesas_libres = False
+    elif modelo_elegido == 'Propuesta 2':
+        mesas_libres = True
+    
     # Load the GeoJSON file
     geojson_path = './Postprocessing/circ_santafe23.geojson'
     gdf = gpd.read_file(geojson_path)
@@ -424,8 +485,12 @@ def create_heatmap_with_savings():
     for circuito in gdf['circuito']:
         try:
             # Load the result_model and result_actual_model pickles for the circuito
-            with open(f'./Postprocessing/result_model_{circuito}.pkl', 'rb') as f:
-                result_model = pickle.load(f)
+            if mesas_libres:
+                with open(f'./Postprocessing/result_model_2_{circuito}.pkl', 'rb') as f:
+                    result_model = pickle.load(f)
+            else:
+                with open(f'./Postprocessing/result_model_{circuito}.pkl', 'rb') as f:
+                    result_model = pickle.load(f)
             with open(f'./Postprocessing/result_actual_model_{circuito}.pkl', 'rb') as f:
                 result_actual_model = pickle.load(f)
 
@@ -501,12 +566,16 @@ def create_heatmap_with_savings():
             tooltip=popup_text
         ).add_to(m)
 
-    # Save the map to an HTML file
-    m.save('./Postprocessing/savings_heatmap.html')
+    if mesas_libres:
+        # Save the map to an HTML file
+        m.save('./Postprocessing/savings_heatmap_2.html')
+    else:
+        # Save the map to an HTML file
+        m.save('./Postprocessing/savings_heatmap.html')
 
     return m
 
-m = create_heatmap_with_savings()
+# m = create_heatmap_with_savings()
 # %%
 def create_circuitos_map_with_labels():
     """
@@ -557,18 +626,24 @@ def create_circuitos_map_with_labels():
 
     return m
 
-def create_distance_histograms_plotly(circuito):
+def create_distance_histograms_plotly(circuito, mesas_libres=False):
     """
     Reads data_modelo and result_model files for a given circuito, extracts distances,
     and creates histograms for the distances in the actual and new models using Plotly.
+    The x-axis range is determined based on the actual model distances.
     Saves the histograms as pickle files.
     
     Args:
         circuito (str): The circuito identifier (e.g., '11A').
+        mesas_libres (bool): Whether to use the "mesas libres" model. Defaults to False.
     """
     # Load data_modelo
-    with open(f'Preprocessing/data_modelo_{circuito}.pkl', 'rb') as f:
-        data_modelo = pickle.load(f)
+    if mesas_libres:
+        with open(f'Preprocessing/data_modelo_2_{circuito}.pkl', 'rb') as f:
+            data_modelo = pickle.load(f)
+    else:
+        with open(f'Preprocessing/data_modelo_{circuito}.pkl', 'rb') as f:
+            data_modelo = pickle.load(f)
     
     # Extract distances dictionary
     distancias = data_modelo['distancias']
@@ -578,8 +653,12 @@ def create_distance_histograms_plotly(circuito):
     )
     
     # Load result_model and result_model_actual
-    with open(f'Postprocessing/result_model_{circuito}.pkl', 'rb') as f:
-        result_model = pickle.load(f)
+    if mesas_libres:
+        with open(f'Postprocessing/result_model_2_{circuito}.pkl', 'rb') as f:
+            result_model = pickle.load(f)
+    else:
+        with open(f'Postprocessing/result_model_{circuito}.pkl', 'rb') as f:
+            result_model = pickle.load(f)
     with open(f'Postprocessing/result_actual_model_{circuito}.pkl', 'rb') as f:
         result_model_actual = pickle.load(f)
     
@@ -601,19 +680,23 @@ def create_distance_histograms_plotly(circuito):
     df_nueva = pd.merge(df_asignacion_nueva, df_distancias, on=['VOTANTE', 'ESCUELA'], how='left')
     df_actual = pd.merge(df_asignacion_actual, df_distancias, on=['VOTANTE', 'ESCUELA'], how='left')
     
+    # Determine the x-axis range based on the actual model distances
+    x_min = df_actual['DISTANCIA'].min()
+    x_max = df_actual['DISTANCIA'].max()
+    
     # Create Plotly histograms
     fig_nueva = go.Figure()
     fig_nueva.add_trace(go.Histogram(
         x=df_nueva['DISTANCIA'],
         nbinsx=20,  # Number of bins
-        name='Modelo Nuevo',
-        marker=dict(color='blue'),
+        name='Modelo Nuevo' if not mesas_libres else 'Modelo Mesas Libres',
+        marker=dict(color='blue' if not mesas_libres else 'green'),  # Change color based on mesas_libres
         opacity=0.7
     ))
     fig_nueva.update_layout(
-        # title=f'Histograma de Distancias - Modelo Nuevo (Circuito {circuito})',
         xaxis_title='Distancia por persona (km)',
         yaxis_title='Frecuencia',
+        xaxis=dict(range=[x_min, x_max]),  # Set x-axis range
         template='plotly_white',
         margin=dict(t=0)  # Remove space above the plot
     )
@@ -627,22 +710,26 @@ def create_distance_histograms_plotly(circuito):
         opacity=0.7
     ))
     fig_actual.update_layout(
-        # title=f'Histograma de Distancias - Modelo Actual (Circuito {circuito})',
         xaxis_title='Distancia por persona (km)',
         yaxis_title='Frecuencia',
+        xaxis=dict(range=[x_min, x_max]),  # Set x-axis range
         template='plotly_white',
         margin=dict(t=0)  # Remove space above the plot
     )
     
     # Save the histograms as pickle files
-    with open(f'Postprocessing/histogram_nueva_{circuito}.pkl', 'wb') as f:
-        pickle.dump(fig_nueva, f)
+    if mesas_libres:
+        with open(f'Postprocessing/histogram_nueva_2_{circuito}.pkl', 'wb') as f:
+            pickle.dump(fig_nueva, f)
+    else:
+        with open(f'Postprocessing/histogram_nueva_{circuito}.pkl', 'wb') as f:
+            pickle.dump(fig_nueva, f)
     with open(f'Postprocessing/histogram_actual_{circuito}.pkl', 'wb') as f:
         pickle.dump(fig_actual, f)
     
     print(f"Histograms saved as pickle files for circuito {circuito}.")
     
-def create_distance_histograms_all_circuitos():
+def create_distance_histograms_all_circuitos(circuitos, mesas_libres = False):
     """
     Reads all data_modelo, result_model, and result_actual_model files for all circuitos,
     aggregates the distances, and creates histograms for the distances in the actual and new models.
@@ -654,9 +741,13 @@ def create_distance_histograms_all_circuitos():
     df_actual_all = pd.DataFrame(columns=['VOTANTE', 'ESCUELA', 'DISTANCIA'])
 
     # Get all circuito files
-    data_modelo_files = glob.glob('Preprocessing/data_modelo_*.pkl')
-    result_model_files = glob.glob('Postprocessing/result_model_*.pkl')
-    result_actual_model_files = glob.glob('Postprocessing/result_actual_model_*.pkl')
+    if mesas_libres:
+        data_modelo_files = [f'Preprocessing/data_modelo_2_{circuito}.pkl' for circuito in circuitos]
+        result_model_files = [f'Postprocessing/result_model_2_{circuito}.pkl' for circuito in circuitos]
+    else:
+        data_modelo_files = [f'Preprocessing/data_modelo_{circuito}.pkl' for circuito in circuitos]
+        result_model_files = [f'Postprocessing/result_model_{circuito}.pkl' for circuito in circuitos]
+    result_actual_model_files = [f'Postprocessing/result_actual_model_{circuito}.pkl' for circuito in circuitos]
 
     # Ensure the number of files match
     if len(result_model_files) != len(result_actual_model_files):
@@ -738,8 +829,12 @@ def create_distance_histograms_all_circuitos():
     )
 
     # Save the histograms as pickle files
-    with open('Postprocessing/histogram_nueva_all.pkl', 'wb') as f:
-        pickle.dump(fig_nueva, f)
+    if mesas_libres:
+        with open('Postprocessing/histogram_nueva_2_all.pkl', 'wb') as f:
+            pickle.dump(fig_nueva, f)
+    else:
+        with open('Postprocessing/histogram_nueva_all.pkl', 'wb') as f:
+            pickle.dump(fig_nueva, f)
     with open('Postprocessing/histogram_actual_all.pkl', 'wb') as f:
         pickle.dump(fig_actual, f)
 

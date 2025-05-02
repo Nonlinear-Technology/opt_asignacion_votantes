@@ -28,9 +28,9 @@ with col1:
     if st.button(f':material/public: :orange[**Ver circuitos**]', type='tertiary'):
         circuitos_electorales()
         
-        
+elegir_optimo = st.pills(label='**Seleccionar asignación**', options=['Propuesta 1', 'Propuesta 2'], default='Propuesta 1', help='Propuesta 1 es con mesas fijas, Propuesta 2 es con mesas libres')      
 
-global_actual, global_nuevo, ahorro_global, ahorro_promedio, ahorro_promedio_actual, ahorro_promedio_nuevo, ahorro_tiempo_global, ahorro_tiempo_promedio, tiempo_promedio_actual, tiempo_promedio_nuevo = calculate_global_and_average_saving()
+global_actual, global_nuevo, ahorro_global, ahorro_promedio, ahorro_promedio_actual, ahorro_promedio_nuevo, ahorro_tiempo_global, ahorro_tiempo_promedio, tiempo_promedio_actual, tiempo_promedio_nuevo = calculate_global_and_average_saving(st.session_state.circuitos, elegir_optimo)
 
 colAhorroGlobal, colTiempoGlobal, colAhorroPromedio, colTiempoPromedio, _ = st.columns([1,1,1,1,2])
 with colAhorroGlobal:
@@ -74,20 +74,36 @@ with colActual:
         st.plotly_chart(histogram_actual, use_container_width=True)
 with colNueva:
     st.write('')
-    st.markdown(
-        """
-        <div style="
-            font-size: 20px;
-            font-weight: bold;
-            background-color: #f0f0f0;
-            border-radius: 10px;
-            padding: 10px;
-            text-align: center;">
-            OPTIMO
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    if elegir_optimo == 'Propuesta 1':
+        st.markdown(
+            """
+            <div style="
+                font-size: 20px;
+                font-weight: bold;
+                background-color: #f0f0f0;
+                border-radius: 10px;
+                padding: 10px;
+                text-align: center;">
+                OPTIMO Mesas fijas
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    elif elegir_optimo == 'Propuesta 2':
+        st.markdown(
+            """
+            <div style="
+                font-size: 20px;
+                font-weight: bold;
+                background-color: #f0f0f0;
+                border-radius: 10px;
+                padding: 10px;
+                text-align: center;">
+                OPTIMO Mesas libres
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     st.write('')
     
     colMetricasPropuesta, colHistorgramaPropuesta = st.columns([1,1])
@@ -103,10 +119,10 @@ with colNueva:
         st.plotly_chart(histogram_nueva, use_container_width=True)
         
 with colMapa:
-    fig = create_heatmap_with_savings()
+    fig = create_heatmap_with_savings(elegir_optimo)
     folium_static(fig)
         
-    
+
 # colMetricas, colMapa = st.columns([2,3])
 # global_actual, global_nuevo, ahorro_global, ahorro_promedio, ahorro_promedio_actual, ahorro_promedio_nuevo = calculate_global_and_average_saving()
 # with colMetricas:
