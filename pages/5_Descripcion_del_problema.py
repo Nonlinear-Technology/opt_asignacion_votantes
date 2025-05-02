@@ -44,9 +44,9 @@ Un método comúnmente utilizado consiste en <strong>ordenar alfabéticamente el
 
 <h2>Enfoque propuesto</h2>
 
-A partir de <strong>datos oficiales</strong>, desde <strong>Nonlinear</strong> proponemos un enfoque basado en <strong>rigurosidad matemática</strong> y <strong>herramientas informáticas</strong> para obtener una asignación óptima de votantes al colegio más cercano, respetando las zonas electorales y las capacidades de las mesas.
+A partir de <strong>datos oficiales</strong>, desde <strong>Nonlinear</strong> proponemos un enfoque basado en <strong>rigurosidad matemática</strong> y <strong>herramientas informáticas</strong> para obtener una asignación óptima, 'Mesas fijas' de votantes al colegio más cercano, respetando las zonas electorales y las capacidades de las mesas.
 
-Además, desarrollamos un modelo aún más eficiente que permite <strong>adaptar la cantidad de mesas</strong> según la cercanía de las escuelas a la mayor concentración de votantes.
+Además, desarrollamos un modelo aún más eficiente, 'Mesas libres' que permite <strong>adaptar la cantidad de mesas</strong> según la cercanía de las escuelas a la mayor concentración de votantes.
 
 <h2>Contenido del sitio</h2>
 
