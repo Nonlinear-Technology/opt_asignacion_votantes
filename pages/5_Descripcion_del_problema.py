@@ -1,9 +1,10 @@
 import streamlit as st
 
+st.logo('Logo-normal.svg', icon_image='Logo-iso chico.svg')
+
+
 # Configuración de la página
 st.set_page_config(page_title="Descripción del problema", page_icon=":material/ballot:", layout="wide", initial_sidebar_state="expanded")
-
-st.logo('Logo-normal.svg', icon_image='Logo-iso chico.svg')
 
 # Estilos visuales
 st.markdown("""
