@@ -11,6 +11,8 @@ st.set_page_config(page_title="Asignación votantes", page_icon=":material/home:
 
 st.logo('Logo-normal.svg', icon_image='Logo-iso chico.svg')
 
+st.session_state.circuitos = ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100', '110', '115', '120', '130', '140', '142', '150', '152', '160', '161', '162', '165', '170', '171', '172', '175', '180', '185']
+
 @st.dialog('Circuitos electorales de Santa Fe')
 def circuitos_electorales():
     fig_circuitos = create_circuitos_map_with_labels()
@@ -28,15 +30,15 @@ with col1:
     if st.button(f':material/public: :orange[**Ver circuitos**]', type='tertiary'):
         circuitos_electorales()
         
-elegir_optimo = st.pills(label='**Seleccionar asignación**', options=['Propuesta 1', 'Propuesta 2'], default='Propuesta 1', help='Propuesta 1 es con mesas fijas, Propuesta 2 es con mesas libres')      
+elegir_optimo = st.pills(label='**Seleccionar asignación**', options=['Optimo mesas fijas', 'Optimo mesas libres'], default='Optimo mesas fijas', help='Optimo mesas fijas es con mesas fijas, Optimo mesas libres es con mesas libres')      
 
 global_actual, global_nuevo, ahorro_global, ahorro_promedio, ahorro_promedio_actual, ahorro_promedio_nuevo, ahorro_tiempo_global, ahorro_tiempo_promedio, tiempo_promedio_actual, tiempo_promedio_nuevo = calculate_global_and_average_saving(st.session_state.circuitos, elegir_optimo)
 
 colAhorroGlobal, colTiempoGlobal, colAhorroPromedio, colTiempoPromedio, _ = st.columns([1,1,1,1,2])
 with colAhorroGlobal:
-    custom_metric(label = f'Ahorro global', valor_total = f'{ahorro_global:.2f} km')
+    custom_metric(label = f'Ahorro global', valor_total = f'{ahorro_global:.0f} km', cambio_porcentual = global_nuevo/global_actual)
 with colTiempoGlobal:
-    custom_metric(label = f'Ahorro tiempo global', valor_total = f'{ahorro_tiempo_global:.2f} hs')
+    custom_metric(label = f'Ahorro tiempo global', valor_total = f'{ahorro_tiempo_global:.0f} hs')
 with colAhorroPromedio:
     custom_metric(label = f'Ahorro promedio por persona', valor_total = f'{ahorro_promedio:.2f} km')
 with colTiempoPromedio:
@@ -63,7 +65,7 @@ with colActual:
     
     colMetricasActual, colHistorgramaActual = st.columns([1,1])
     with colMetricasActual:
-        custom_metric(label = f'Distancia total', valor_total = f'{global_actual:.2f} km')
+        custom_metric(label = f'Distancia total', valor_total = f'{global_actual:.0f} km')
         st.write('')
         custom_metric(label = f'Ahorro promedio por persona', valor_total = f'{ahorro_promedio_actual:.2f} km')
         st.write('')
@@ -74,7 +76,7 @@ with colActual:
         st.plotly_chart(histogram_actual, use_container_width=True)
 with colNueva:
     st.write('')
-    if elegir_optimo == 'Propuesta 1':
+    if elegir_optimo == 'Optimo mesas fijas':
         st.markdown(
             """
             <div style="
@@ -89,7 +91,7 @@ with colNueva:
             """,
             unsafe_allow_html=True
         )
-    elif elegir_optimo == 'Propuesta 2':
+    elif elegir_optimo == 'Optimo mesas libres':
         st.markdown(
             """
             <div style="
@@ -108,7 +110,7 @@ with colNueva:
     
     colMetricasPropuesta, colHistorgramaPropuesta = st.columns([1,1])
     with colMetricasPropuesta:
-        custom_metric(label = f'Distancia total', valor_total = f'{global_nuevo:.2f} km')
+        custom_metric(label = f'Distancia total', valor_total = f'{global_nuevo:.0f} km')
         st.write('')
         custom_metric(label = f'Ahorro promedio por persona', valor_total = f'{ahorro_promedio_nuevo:.2f} km')
         st.write('')
