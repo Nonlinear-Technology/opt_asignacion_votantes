@@ -74,7 +74,7 @@ with colActual:
     colMetricasActual, colHistorgramaActual = st.columns([1,1])
     
     with colMetricasActual:
-        custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_actual:.0f} km')
+        custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_actual:.2f} km')
         # with colMetrica2Actual:
         st.write('')
         custom_metric(label = f'Distancia promedio por persona', valor_total = f'{distancia_total_actual/cantidad_votantes:.2f} km')
@@ -108,7 +108,7 @@ with colNueva:
     colMetricasPropuesta, colHistorgramaPropuesta = st.columns([1,1])
     
     with colMetricasPropuesta:
-        custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_nueva:.0f} km', cambio_porcentual = distancia_total_nueva/distancia_total_actual)
+        custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_nueva:.2f} km')
         # with colMetrica2Nueva:
         st.write('')
         custom_metric(label = f'Distancia promedio por persona', valor_total = f'{distancia_total_nueva/cantidad_votantes:.2f} km')
@@ -141,7 +141,7 @@ with colNueva2:
     colMetricasPropuesta, colHistorgramaPropuesta = st.columns([1,1])
     
     with colMetricasPropuesta:
-        custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_nueva_2:.0f} km', cambio_porcentual = distancia_total_nueva_2/distancia_total_actual)
+        custom_metric(label = f'Distancia total recorrida', valor_total = f'{distancia_total_nueva_2:.2f} km')
         # with colMetrica2Nueva:
         st.write('')
         custom_metric(label = f'Distancia promedio por persona', valor_total = f'{distancia_total_nueva_2/cantidad_votantes:.2f} km')
@@ -158,7 +158,7 @@ colMapa1, colMapa2 = st.columns([1,1])
 
 with colMapa1:
 
-    actual_nueva_1 = st.pills(label = f'**Seleccionar mapa**', options = ['Actual', 'Optimo mesas fijas', 'Optimo mesas libres'], key='pills_1', default = 'Actual')
+    actual_nueva_1 = st.pills(label = f'**Seleccionar mapa**', options = ['Actual', 'Optimo mesas fijas', 'Optimo mesas libres'], key='pills_1')
     
     if actual_nueva_1 == 'Actual':
         with open(f'Postprocessing/mapa_actual_{circuito}.pkl', 'rb') as f:
@@ -180,7 +180,7 @@ with colMapa1:
                 
 with colMapa2:
     
-    actual_nueva_2 = st.pills(label = f'**Seleccionar mapa**', options = ['Actual', 'Optimo mesas fijas', 'Optimo mesas libres'], key='pills_2', default = 'Optimo mesas fijas')
+    actual_nueva_2 = st.pills(label = f'**Seleccionar mapa**', options = ['Actual', 'Optimo mesas fijas', 'Optimo mesas libres'], key='pills_2')
     
     if actual_nueva_2 == 'Actual':
         with open(f'Postprocessing/mapa_actual_{circuito}.pkl', 'rb') as f:

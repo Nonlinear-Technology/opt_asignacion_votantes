@@ -89,9 +89,8 @@ def create_map(df, title):
         # Ensure the required columns exist
         if 'VOTANTE' not in df.columns or 'Latitude_votante' not in df.columns or 'Longitude_votante' not in df.columns:
             raise KeyError("Required columns ('VOTANTE', 'Latitude_votante', 'Longitude_votante') are missing in the DataFrame.")
-        
         # Define colors for the schools
-        colors = ['blue', 'green', 'purple', 'orange', 'darkred', 'lightgreen', 'pink', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple', 'lightblue', 'lightgreen', 'gray', 'black', 'lightgray', 'red']
+        colors = ['blue', 'green', 'purple', 'orange', 'darkred', 'lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen', 'gray', 'black', 'lightgray']
         max_radius, min_radius = 10, 1
 
         # Create a map centered around the average latitude and longitude
@@ -100,22 +99,23 @@ def create_map(df, title):
 
         # Add schools to the map with different colors
         school_colors = {}
-        unique_schools = sorted(df['ESCUELA'].drop_duplicates().reset_index(drop=True))  # **Changed: Sort unique schools alphabetically**
-        for i, school in enumerate(unique_schools):  # **Changed: Iterate over unique schools**
-            color = colors[i % len(colors)]  # Assign colors sequentially
-            school_colors[school] = color
-
-        for _, row in df.drop_duplicates(subset=['ESCUELA']).iterrows():
+        for i, (_, row) in enumerate(df.drop_duplicates(subset=['ESCUELA']).iterrows()):
+            color = colors[i % len(colors)]
+            school_colors[row['ESCUELA']] = color
+            # si row['Latitude_escuela'] no es un float o es NaN que se imprima el nombre de la escuela y el valor
             try:
                 folium.Marker(
                     location=[row['Latitude_escuela'], row['Longitude_escuela']],
                     popup=row['ESCUELA'],
-                    icon=folium.Icon(color=school_colors[row['ESCUELA']], icon='info-sign')  # **Changed: Use sequentially assigned colors**
+                    icon=folium.Icon(color=color, icon='info-sign')
                 ).add_to(m)
             except ValueError:
                 print(f"Error with school {row['ESCUELA']}: Latitude_escuela={row['Latitude_escuela']}, Longitude_escuela={row['Longitude_escuela']}")
 
+        
+        
         # Number of voters per school for each block
+        print(df.columns)
         for (lat, long), subdf in df.groupby(["Latitude_votante", "Longitude_votante"]):
             school_count = {school: 0 for school in subdf['ESCUELA'].unique()}
             for _, row in subdf.iterrows():
@@ -124,24 +124,25 @@ def create_map(df, title):
 
             # For each school in the block
             for school in school_count:
+                
                 if school_count[school] > 0:
-                    # Apply a small random offset to overlapping points
+                                # # Apply a small random offset to overlapping points
                     jitter_lat = random.uniform(-0.00005, 0.00005)  # Small random offset for latitude
                     jitter_lon = random.uniform(-0.00005, 0.00005)  # Small random offset for longitude
                     adjusted_lat = lat + jitter_lat
                     adjusted_lon = long + jitter_lon
-                    # Normalize radius
+                    # normalize radius
                     proportion = school_count[school] / len(subdf)
                     radius = max_radius * (proportion) + min_radius
-                    folium.CircleMarker(
-                        location=[adjusted_lat, adjusted_lon],
-                        radius=radius,
-                        color=school_colors[school],
-                        fill=True,
-                        fill_color=school_colors[school],
-                        fill_opacity=0.9 * proportion,
-                        popup=f"Proporción asignada a {school}: {proportion * 100} %"
-                    ).add_to(m)
+                folium.CircleMarker(    
+                    location=[adjusted_lat, adjusted_lon],
+                    radius=radius,
+                    color=school_colors[school],
+                    fill=True,
+                    fill_color=school_colors[school],
+                    fill_opacity=0.9*proportion,
+                    popup=f"Proporción asignada a {school}: {proportion*100} %"
+                ).add_to(m)
         
         # Add voters to the map
 
@@ -397,9 +398,9 @@ def calculate_global_and_average_saving(circuitos, modelo_elegido):
                 global_time_saved, average_time_saved, average_time_actual, average_time_nueva)
     """
     # Construct file paths based on the provided circuitos
-    if modelo_elegido == 'Optimo mesas fijas':
+    if modelo_elegido == 'Propuesta 1':
         result_model_files = [f'Postprocessing/result_model_{circuito}.pkl' for circuito in circuitos]
-    if modelo_elegido == 'Optimo mesas libres':
+    if modelo_elegido == 'Propuesta 2':
         result_model_files = [f'Postprocessing/result_model_2_{circuito}.pkl' for circuito in circuitos]
     result_model_actual_files = [f'Postprocessing/result_actual_model_{circuito}.pkl' for circuito in circuitos]
 
@@ -466,9 +467,9 @@ def create_heatmap_with_savings(modelo_elegido):
     Creates a heat map of Santa Fe circuitos based on the difference in objective function values
     (actual - nuevo) using the circ_santafe23.geojson file and result_model pickles.
     """
-    if modelo_elegido == 'Optimo mesas fijas':
+    if modelo_elegido == 'Propuesta 1':
         mesas_libres = False
-    elif modelo_elegido == 'Optimo mesas libres':
+    elif modelo_elegido == 'Propuesta 2':
         mesas_libres = True
     
     # Load the GeoJSON file

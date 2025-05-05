@@ -1,8 +1,10 @@
 import streamlit as st
+# Configurar la página
+st.set_page_config(page_title="Metodología", layout="wide")
 
-st.set_page_config(page_title="Asignación votantes", page_icon=":material/home:", layout="wide", initial_sidebar_state="expanded")
-
+# st.logo('Logo-normal.svg', icon_image='Logo-iso chico.svg')
 st.logo('Logo-normal.svg', icon_image='Logo-iso chico.svg')
+
 
 # Estilos personalizados: tamaño de letra, colores, separación
 st.markdown("""
