@@ -58,5 +58,6 @@ En las siguientes páginas encontrarán:
 <li><strong>Ahorro global:</strong> Comparativa a nivel del sector electoral (Santa Fe Ciudad).</li>
 <li><strong>Nosotros:</strong> Información sobre la empresa.</li>
 <li><strong>Metodología:</strong> La ciencia detrás de la propuesta, junto con las hipótesis realizadas y otras observaciones.</li>
+<li><strong>Conclusiones:</strong> Descripción de los principales resultados.</li>
 </ol>
 """, unsafe_allow_html=True)
